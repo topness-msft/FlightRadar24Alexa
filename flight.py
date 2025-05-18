@@ -18,7 +18,7 @@ CENTER = (CENTER_LAT, CENTER_LON)
 
 # Calculate BOUNDS as a 1 mile box centered on CENTER
 lat_delta, lon_delta = miles_to_latlon(1)
-BOUNDS = f"{CENTER_LAT + lat_delta},{CENTER_LAT - lat_delta},{CENTER_LON - lon_delta},{CENTER_LON + lon_delta}"
+BOUNDS = f"{round(CENTER_LAT + lat_delta, 3)},{round(CENTER_LAT - lat_delta, 3)},{round(CENTER_LON - lon_delta, 3)},{round(CENTER_LON + lon_delta, 3)}"
 
 # Get Bearer token from environment variable
 API_KEY = os.getenv("FR24_API_KEY")
@@ -33,7 +33,19 @@ def get_nearby_flights():
     response = requests.get(url, headers=HEADERS)
     if response.status_code != 200:
         return []
-    return response.json().get("data", [])
+    try:
+        json_data = response.json()
+        # If the response is a list, return it directly
+        if isinstance(json_data, list):
+            return json_data
+        # If the response is a dict, get the 'data' key
+        data = json_data.get("data", None)
+        if not data:
+            return []
+        return data
+    except Exception as e:
+        print(f"Error parsing flight data: {e}")
+        return []
 
 def get_airline_name(painted_as):
     url = f"https://fr24api.flightradar24.com/api/static/airlines/{painted_as}/light"
